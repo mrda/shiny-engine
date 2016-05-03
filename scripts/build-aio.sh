@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # build-aio.sh - Build an all-in-one openstack-ansible with
 #                ironic included
@@ -39,7 +39,6 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-ARGS=("$@")
 case "$1" in
     -h|--help)
         echo "${MYNAME} [-h|-v|-l|--help|--version|--list] [release]"
