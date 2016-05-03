@@ -22,7 +22,7 @@
 #
 
 # v1.0 - Support Liberty and Mitaka, with Liberty from mrda's repo
-VERSION=1.0
+VERSION=1.0.1
 USAGE="\nBuild an AIO for an optionally specified release\n\n \
 -h|--help - display this help text\n \
 -v|--version - display version information about this program\n \
@@ -76,7 +76,7 @@ case "${RELEASE}" in
         # Definitions for openstack-ansible Mitaka version
         echo "--- Building a Mitaka AIO from OpenStack's official repository"
         REPO="https://github.com/openstack/openstack-ansible.git"
-        BRANCH="mitaka"
+        BRANCH="stable/mitaka"
         ;;
     *)
         echo "Unsupported version specified"
@@ -107,6 +107,7 @@ git clone ${REPO} /opt/openstack-ansible
 cd /opt/openstack-ansible
 
 # Go to the right branch
+git fetch
 git checkout ${BRANCH}
 
 # Ironic isn't turned on by default, so copy in the environment
