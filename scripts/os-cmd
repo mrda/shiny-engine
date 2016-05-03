@@ -31,6 +31,12 @@ __check_cmd_avail ()
 LXCATTACH="lxc-attach"
 LXCLS="lxc-ls"
 
+# Make sure we're running as root
+if [[ $EUID -ne 0 ]]; then
+  echo "This script must be run as root.  Exiting..." 2>&1
+  exit 1
+fi
+
 # Verify we have the commands we need
 __check_cmd_avail ${LXCATTACH}
 __check_cmd_avail ${LXCLS}
