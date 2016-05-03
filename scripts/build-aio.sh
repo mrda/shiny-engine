@@ -126,10 +126,6 @@ openstack-ansible setup-everything.yml
 openstack-ansible os-ironic-install.yml
 
 # Test that it works
-#echo "--- Quick test to see that ironic is working..."
-#UTIL=$(lxc-ls | grep utility)
-#lxc-attach -n $UTIL
-#cd /root
-#. openrc
-#ironic driver-list
-#ironic node-list
+echo "--- Quick test to see that ironic is working..."
+UTIL=$(lxc-ls | grep utility)
+lxc-attach -n $UTIL -- bash -c '. /root/openrc && ironic driver-list'
