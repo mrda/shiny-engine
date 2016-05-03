@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# os-cmd.sh - Issue an OpenStack command via a utility container
+# os-cmd - Issue an OpenStack command via a utility container
 #
 # Copyright (C) 2016 Michael Davies <michael@the-davies.net>
 #
