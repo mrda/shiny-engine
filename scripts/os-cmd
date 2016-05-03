@@ -1,0 +1,51 @@
+#!/bin/bash
+#
+# os-cmd.sh - Issue an OpenStack command via a utility container
+#
+# Copyright (C) 2016 Michael Davies <michael@the-davies.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+# 02111-1307, USA.
+#
+
+__check_cmd_avail ()
+{
+    if [ z$(which $1) == "z" ]; then
+        echo "The command '$1' could not be found, exiting"
+        exit 1
+    fi
+}
+
+LXCATTACH="lxc-attach"
+LXCLS="lxc-ls"
+
+# Verify we have the commands we need
+__check_cmd_avail ${LXCATTACH}
+__check_cmd_avail ${LXCLS}
+
+# Ensure a command was provided
+if [ $# -eq 0 ]; then
+  echo "Usage: $(basename $0) <command>"
+  exit 1
+fi
+
+# Find the container to execute in
+UTIL=$(${LXCLS} | grep utility)
+if [ z${UTIL} == z ]; then
+  echo "*** Couldn't find your utility container.  Exiting..."
+  exit 1
+fi
+
+${LXCATTACH} -n ${UTIL} -- bash -c ". /root/openrc && $*"
