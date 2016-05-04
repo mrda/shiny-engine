@@ -1,0 +1,191 @@
+#!/bin/bash
+#
+# build-os-server - Build a server using Rackspace public cloud
+#
+# Copyright (C) 2016 Michael Davies <michael@the-davies.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+# 02111-1307, USA.
+#
+
+__check_cmd_avail ()
+{
+    if [ z$(which $1) == "z" ]; then
+        echo "The command '$1' could not be found, exiting"
+        exit 1
+    fi
+}
+
+# Verify we have the commands we need
+RACK="rack"
+__check_cmd_avail ${RACK}
+
+# $1 is the prompt string, $2 is the array of choices,
+# $3 is the selected choice
+__choose_option ()
+{
+    OLDIFS=$IFS
+    IFS=$'\n'
+
+    declare -a OPT=("${!2}")
+    EXIT_LOOP=0
+    while [ $EXIT_LOOP -ne 1 ];
+    do
+        j=0
+        echo $1
+        for i in ${OPT[@]}
+        do
+            echo $j $i
+            j=$[j+1]
+        done
+
+        read -p "Which option would you like to choose? " -r
+        if [ $REPLY -ge 0 ] && [ $REPLY -lt $j ]
+        then
+            EXIT_LOOP=1
+        else
+            echo "\"$REPLY\" is not a valid option, please choose again"
+        fi
+    done
+
+    IFS=$OLDIFS
+
+    eval "$3=${OPT[$REPLY]}"
+}
+
+__get_profiles ()
+{
+    if [ ! -r ${HOME}/.rack/config ]; then
+        exit 1
+    fi
+
+    local -a FINAL=()
+
+    REGIONS=$( grep '\[' ${HOME}/.rack/config | tr '\n' ' ' )
+    for i in $( echo ${REGIONS[@]} )
+    do
+      PARAM=${i#"["}
+      PARAM=${PARAM%"]"}
+      FINAL[${#FINAL[@]}]=$PARAM
+    done
+
+    # Output the array as a string in the "declare" representation
+    declare -p FINAL | sed -e 's/^declare -a [^=]*=//'
+}
+
+__get_images ()
+{
+    local -a IMAGES=()
+
+    OLDIFS=$IFS
+    IFS=$'\n'
+    TEMP_IMAGES=($(rack servers image list --profile $REGION | grep -i ubuntu | cut -f2))
+
+    # add some extra quoting
+    for ELEM in ${TEMP_IMAGES[@]};
+    do
+        IMAGES[${#IMAGES[@]}]='"'"$ELEM"'"';
+    done
+
+    IFS=$OLDIFS
+    declare -p IMAGES | sed -e 's/^declare -a [^=]*=//'
+}
+
+__get_flavors ()
+{
+    local -a FLAVORS=()
+
+    OLDIFS=$IFS
+    IFS=$'\n'
+
+    TEMP_FLAVORS=($(rack servers flavor list --profile $REGION | tail +2 | tr -s "\t " | cut -f2))
+
+    # add some extra quoting
+    for ELEM in ${TEMP_FLAVORS[@]};
+    do
+        FLAVORS[${#FLAVORS[@]}]='"'"$ELEM"'"';
+    done
+
+    IFS=$OLDIFS
+    declare -p FLAVORS | sed -e 's/^declare -a [^=]*=//'
+}
+
+__get_keypairs ()
+{
+    local -a KEYPAIRS=()
+
+    OLDIFS=$IFS
+    IFS=$'\n'
+
+    KEYPAIRS=($(rack servers keypair list --profile $REGION | tail +2 | cut -f1))
+
+    IFS=$OLDIFS
+    declare -p KEYPAIRS | sed -e 's/^declare -a [^=]*=//'
+}
+
+# Get a name for the new instance
+read -p "What do you want to call your new instance? " -r
+NAME=$REPLY
+printf "\n\n"
+
+# List profiles and select one
+PROF_STR=$(__get_profiles)
+eval "declare -a PROFILES=${PROF_STR}"
+__choose_option "Please select a region" PROFILES[@] REGION
+printf "You chose to deploy to: \"$REGION\"\n\n"
+
+# List images and select one
+IMG_STR=$(__get_images)
+eval "declare -a IMAGES=${IMG_STR}"
+__choose_option "Please select an image" IMAGES[@] IMAGE
+printf "You chose to use image: \"$IMAGE\"\n\n"
+
+# List flavors and select one
+FLA_STR=$(__get_flavors)
+eval "declare -a FLAVORS=${FLA_STR}"
+__choose_option "Please select a flavor" FLAVORS[@] FLAVOR
+printf "You selected flavor: \"$FLAVOR\"\n\n"
+
+# List keypairs and select one
+KP_STR=$(__get_keypairs)
+eval "declare -a KEYPAIRS=${KP_STR}"
+
+if [ ${KEYPAIRS[@]} -eq 0 ];
+then
+    echo "Sorry, you have no keypairs loaded."
+    echo "Please do that using 'rack servers keypair upload --file <<file.pub>> --name <<keyname>> --profile <<yourprofile>>'"
+    exit 1
+fi
+__choose_option "Please select a keypair" KEYPAIRS[@] KEYPAIR
+printf "You chose to use keypair: \"$KEYPAIR\"\n\n"
+
+printf "\n"
+printf "You've selected to create the following instance...\n"
+printf "%10s: %s\n" "NAME" "$NAME"
+printf "%10s: %s\n" "REGION" "$REGION"
+printf "%10s: %s\n" "IMAGE" "$IMAGE"
+printf "%10s: %s\n" "FLAVOR" "$FLAVOR"
+printf "%10s: %s\n\n" "KEYPAIR" "$KEYPAIR"
+
+read -p "Are you sure you want to boot this instance? " -r
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Exiting..."
+    exit 1
+fi
+
+printf "\n"
+
+${RACK} servers instance create --name "$NAME" --image-name "$IMAGE" --flavor-name "$FLAVOR" --keypair "$KEYPAIR" --profile "$REGION"
+
