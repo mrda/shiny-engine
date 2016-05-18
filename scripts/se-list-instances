@@ -1,0 +1,63 @@
+#!/bin/bash
+#
+# se-list-instances - List running instances in the Rackspace cloud
+#
+# Copyright (C) 2016 Michael Davies <michael@the-davies.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+# 02111-1307, USA.
+#
+
+__check_cmd_avail ()
+{
+    if [ z$(which $1) == "z" ]; then
+        echo "The command '$1' could not be found, exiting"
+        exit 1
+    fi
+}
+
+# Verify we have the commands we need
+RACK="rack"
+__check_cmd_avail ${RACK}
+
+
+__get_profiles ()
+{
+    if [ ! -r ${HOME}/.rack/config ]; then
+        exit 1
+    fi
+
+    local -a FINAL=()
+
+    REGIONS=$( grep '\[' ${HOME}/.rack/config | tr '\n\[\]' ' ' )
+    for i in $( echo ${REGIONS[@]} )
+    do
+      FINAL[${#FINAL[@]}]=$i
+    done
+
+    # Output the array as a string in the "declare" representation
+    declare -p FINAL | sed -e 's/^declare -a [^=]*=//'
+}
+
+# List instances per region
+PROF_STR=$(__get_profiles)
+eval "declare -a REGIONS=${PROF_STR}"
+
+for i in ${REGIONS[@]};
+do
+  printf "\n\n********** For region: $i **********\n"
+  ${RACK} servers instance list --profile $i
+done
+

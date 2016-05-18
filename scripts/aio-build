@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# build-aio - Build an all-in-one openstack-ansible with
+# aio-build - Build an all-in-one openstack-ansible with
 #             ironic included
 #
 # Copyright (C) 2016 Michael Davies <michael@the-davies.net>
