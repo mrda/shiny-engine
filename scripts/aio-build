@@ -43,12 +43,12 @@ PROMPT=1
 
 case "$1" in
     -h|--help)
-        echo "${MYNAME} [-h|-v|-l|--help|--version|--list] [release]"
-        echo "${USAGE}"
+        printf "${MYNAME} [-h|-v|-l|--help|--version|--list] [release]\n"
+        printf "${USAGE}\n"
         exit 1
         ;;
     -l|--list)
-        echo "${MYNAME}: The supported releases are: ${SUPPORTED_RELS}"
+        printf "${MYNAME}: The supported releases are: ${SUPPORTED_RELS}\n"
         exit 1
         ;;
     -v|--version)
