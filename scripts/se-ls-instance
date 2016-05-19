@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# se-list-instances - List running instances in the Rackspace cloud
+# se-ls-instance - List running instances in the Rackspace cloud
 #
 # Copyright (C) 2016 Michael Davies <michael@the-davies.net>
 #

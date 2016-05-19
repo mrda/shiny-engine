@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# se-build-os-server - Build a server using Rackspace public cloud
+# se-mkinstance - Build a server using Rackspace public cloud
 #
 # Copyright (C) 2016 Michael Davies <michael@the-davies.net>
 #

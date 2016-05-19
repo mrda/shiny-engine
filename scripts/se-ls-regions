@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# se-rename-instance - Rename a running Rackspace cloud instance
+# se-ls-regions - List the regions where you have Rackspace instances
 #
 # Copyright (C) 2016 Michael Davies <michael@the-davies.net>
 #
@@ -20,19 +20,6 @@
 # 02111-1307, USA.
 #
 
-__check_cmd_avail ()
-{
-    if [ z$(which $1) == "z" ]; then
-        echo "The command '$1' could not be found, exiting"
-        exit 1
-    fi
-}
-
-# Verify we have the commands we need
-RACK="rack"
-__check_cmd_avail ${RACK}
-
-
 __get_profiles ()
 {
     if [ ! -r ${HOME}/.rack/config ]; then
@@ -51,26 +38,12 @@ __get_profiles ()
     declare -p FINAL | sed -e 's/^declare -a [^=]*=//'
 }
 
-# Check that souerce and dest names have been provided
-BASE=$(basename $0)
-if [ -z "$1" ] || [ -z "$2" ]; then
-  printf "Usage: ${BASE} <oldname> <newname>\n"
-  exit 1
-fi
-
-printf "$(basename $0): Renaming \'$1\' to \'$2\'\n"
-
+# List available profiles, and we have one profile per region
 PROF_STR=$(__get_profiles)
 eval "declare -a REGIONS=${PROF_STR}"
 
-for REGION in ${REGIONS[@]};
+for i in ${REGIONS[@]};
 do
-    result=$( ( ${RACK} servers instance update --name "$1" --rename "$2" --profile ${REGION} ) 2>&1 )
-    if [ $? -eq 0 ]; then
-        printf "Moving \'$1\' to \'$2\' in region \'${REGION}\'\n"
-        printf "${result}\n"
-        break
-    else
-        printf "Not in \'${REGION}\', trying another region\n"
-    fi
+  echo $i
 done
+
