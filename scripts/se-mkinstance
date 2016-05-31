@@ -231,6 +231,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     # Save root password, after backing things up first
     PASSFILE=${HOME}/.pass
     cp ${PASSFILE} ${PASSFILE}.${BACKUPDATE}
+    chmod 0600 ${PASSFILE}   # Ensure this is secure
     printf "${NAME}: ${PASS}  # ${DATE}\n" >> ${PASSFILE}
 
     __get_ip_address $NAME IPADDR
