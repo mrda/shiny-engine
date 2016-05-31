@@ -135,6 +135,39 @@ __get_keypairs ()
     declare -p KEYPAIRS | sed -e 's/^declare -a [^=]*=//'
 }
 
+# $1 is the instance name to look for, $2 is the IP Address
+__get_ip_address ()
+{
+    declare -a NAME=("$1")
+    local __resultvar=$2
+
+    SLEEP=60
+    LOCAL_PROF_STR=$(__get_profiles)
+    eval "declare -a LOCAL_REGIONS=${LOCAL_PROF_STR}"
+
+    for LOCAL_REGION in ${LOCAL_REGIONS[@]};
+    do
+        for i in $( seq 1 20 );
+        do
+            printf "...waiting for \"${NAME}\" to finish building, sleeping for ${SLEEP} seconds\n"
+            sleep ${SLEEP}
+            grep_result=$( ( ${RACK} servers instance list --profile ${LOCAL_REGION} | grep "${NAME}" ) 2>&1 )
+            build_status=$( ( echo ${grep_result} | grep 'ACTIVE' ) 2>&1 )
+            if [[ $? -eq 0 ]]; then
+                break
+            fi
+        done
+
+        cut_result=$( ( echo ${grep_result} | cut -f4 -d' ' ) 2>&1 )
+
+        if [[ "z${cut_result}" != "z" ]]; then
+            eval $__resultvar="'${cut_result}'"
+            break
+        fi
+    done
+}
+
+
 # Get a name for the new instance
 read -p "What do you want to call your new instance? " -r
 NAME=$REPLY
@@ -162,8 +195,7 @@ printf "You selected flavor: \"$FLAVOR\"\n\n"
 KP_STR=$(__get_keypairs)
 eval "declare -a KEYPAIRS=${KP_STR}"
 
-if [ ${KEYPAIRS[@]} -eq 0 ];
-then
+if [ ${#KEYPAIRS[@]} -eq 0 ]; then
     echo "Sorry, you have no keypairs loaded."
     echo "Please do that using 'rack servers keypair upload --file <<file.pub>> --name <<keyname>> --profile <<yourprofile>>'"
     exit 1
@@ -187,5 +219,40 @@ fi
 
 printf "\n"
 
-${RACK} servers instance create --name "$NAME" --image-name "$IMAGE" --flavor-name "$FLAVOR" --keypair "$KEYPAIR" --profile "$REGION"
+CREATE_OUTPUT=$( ( ${RACK} servers instance create --name "${NAME}" --image-name "${IMAGE}" --flavor-name "${FLAVOR}" --keypair "${KEYPAIR}" --profile "${REGION}" ) 2>& 1 )
+
+read -p "Do you want to update your ssh config and save the root password? "
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    RAWPASS=$( echo ${CREATE_OUTPUT} | grep AdminPass )
+    PASS=$( echo ${RAWPASS} | cut -f4 -d' ' )
+    DATE=$( date )
+    BACKUPDATE=$( date +%Y%m%d-%H%M%S )
+
+    # Save root password, after backing things up first
+    PASSFILE=${HOME}/.pass
+    cp ${PASSFILE} ${PASSFILE}.${BACKUPDATE}
+    printf "${NAME}: ${PASS}  # ${DATE}\n" >> ${PASSFILE}
+
+    __get_ip_address $NAME IPADDR
+    if [[ "z${IPADDR}" == "z" ]]; then
+        printf "Couldn\'t find IP Address for \'${NAME}\', so can't update ssh config\n"
+        exit 1
+    fi
+
+    # Create ssh config, after backing things up first
+    SSHCONFIG=${HOME}/.ssh/config
+    cp ${SSHCONFIG} ${SSHCONFIG}.${BACKUPDATE}
+    printf "\n# ${NAME} ${DATE}\n" >> ${SSHCONFIG}
+    printf "Host ${NAME}\n" >> ${SSHCONFIG}
+    printf "  Hostname ${IPADDR}\n" >> ${SSHCONFIG}
+    printf "  User ${USER}\n" >> ${SSHCONFIG}
+    printf "  IdentityFile ~/.ssh/id_rsa\n" >> ${SSHCONFIG}
+    printf "  TCPKeepAlive yes\n" >> ${SSHCONFIG}
+    printf "  ServerAliveInterval 60\n" >> ${SSHCONFIG}
+
+    printf "Updated ${PASSFILE} and ${SSHCONFIG} with information about instance \'${NAME}\'\n"
+    printf "You can now \'ssh root@${NAME}\' to login\n\n"
+else
+    printf "${CREATE_OUTPUT}\n"
+fi
 
