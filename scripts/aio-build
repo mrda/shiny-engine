@@ -124,6 +124,12 @@ apt-get update
 apt-get -y upgrade
 apt-get -y install ${DEPS}
 
+# Fix brokenness
+if [[ $( lsb_release --description | cut -f2 ) = "Ubuntu 16.04 LTS" ]]; then
+    systemctl stop graphical.target
+    systemctl disable graphical.target
+fi
+
 # Clone the repo
 git clone ${REPO} /opt/openstack-ansible
 cd /opt/openstack-ansible
