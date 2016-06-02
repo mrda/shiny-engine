@@ -18,6 +18,7 @@ On top of these, there's a couple other things that are provided.  For using the
 ## Install
 
 The easiest way to run the Shiny-Engine scripts is to run the set up script: `./se-setup.sh`.
-But there's two assumptions you'll need to be aware of:
+But there's some assumptions you'll need to be aware of:
 * Remember to have `${HOME}/bin/noarch` in your path.
 * Shiny-Engine assumes you have git cloned this repo in `${HOME}/src/shiny-engine`.  If that's not the case, you'll need to update the `SE` variable in the `se-setup.sh` script
+* Shiney-Engine depends upon the `rack` helper script available at `https://developer.rackspace.com/docs/rack-cli/configuration`.  You'll need to go install that before you can use just about any of the `se-*` scripts
