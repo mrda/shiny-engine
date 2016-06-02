@@ -16,4 +16,8 @@ On top of these, there's a couple other things that are provided.  For using the
 * os-cmd - run a particular command in the lxc utility container, on localhost.  This is so you don't have to lxc-attach to the container, source the openrc, and run your command.  It makes life a little easier :)
 
 ## Install
-The easiest way to run the Shiny-Engine scripts is to run the set up script: \./se-setup.sh`.  Just remember to have ${HOME}/bin/noarch in your path.
+
+The easiest way to run the Shiny-Engine scripts is to run the set up script: `./se-setup.sh`.
+But there's two assumptions you'll need to be aware of:
+* Remember to have `${HOME}/bin/noarch` in your path.
+* Shiny-Engine assumes you have git cloned this repo in `${HOME}/src/shiny-engine`.  If that's not the case, you'll need to update the `SE` variable in the `se-setup.sh` script
