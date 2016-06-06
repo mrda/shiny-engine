@@ -57,7 +57,7 @@ eval "declare -a REGIONS=${PROF_STR}"
 
 for i in ${REGIONS[@]};
 do
-  printf "\n\n********** For region: $i **********\n"
+  printf "\nRegion: $i \n"
   ${RACK} servers instance list --profile $i
 done
 
